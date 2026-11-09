@@ -1,0 +1,4 @@
+# postępy żyją tylko w Dropboxie, nigdy w repozytorium
+postepy.json
+.DS_Store
+*.nosync
