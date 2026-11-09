@@ -264,7 +264,8 @@ const app = typeof document !== 'undefined' ? document.getElementById('app') : n
 const $ = (sel) => app.querySelector(sel);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const saveUI = () => store.set(KEYS.ui, UI);
-const formsLine = (w) => `${w.nl} – ${w.imp_ev} / ${w.imp_mv} – (${w.hulp}) ${w.vd}`;
+const perfLine = (w) => (w.vd ? `(${w.hulp}) ${w.vd}` : 'brak perfectum');
+const formsLine = (w) => `${w.nl} – ${w.imp_ev} / ${w.imp_mv} – ${perfLine(w)}`;
 
 function plural(n, one, few, many) {
   if (n === 1) return one;
@@ -368,11 +369,13 @@ function renderCard() {
   const total = s.queue.length;
   const fields = s.mode === 'forms' ? `
       <label class="fld" data-f="ev"><span>Imperfectum · enkelvoud <em>(ik, hij)</em></span><input ${inputAttrs('ev')}><small class="sol"></small></label>
-      <label class="fld" data-f="mv"><span>Imperfectum · meervoud <em>(wij)</em></span><input ${inputAttrs('mv')}><small class="sol"></small></label>
+      <label class="fld" data-f="mv"><span>Imperfectum · meervoud <em>(wij)</em></span><input ${inputAttrs('mv', !w.vd)}><small class="sol"></small></label>
+      ${w.vd ? `
       <div class="fld" data-f="hulp"><span>Hulpwerkwoord</span>
         <div class="seg"><button type="button" data-act="hulp" data-v="hebben" aria-pressed="false">hebben</button><button type="button" data-act="hulp" data-v="zijn" aria-pressed="false">zijn</button></div>
         <small class="sol"></small></div>
       <label class="fld" data-f="vd"><span>Voltooid deelwoord</span><input ${inputAttrs('vd', true)}><small class="sol"></small></label>`
+      : '<p class="hint" style="text-align:center">Ten czasownik nie ma perfectum.</p>'}`
     : `<label class="fld" data-f="nl"><span>Po holendersku (bezokolicznik)</span><input ${inputAttrs('nl', true)}><small class="sol"></small></label>`;
 
   app.innerHTML = `
@@ -404,7 +407,7 @@ function check(dunno = false) {
   const form = $('#ans');
   const val = (n) => form.elements[n].value;
 
-  if (s.mode === 'forms' && !dunno && !s.hulp) {
+  if (s.mode === 'forms' && w.vd && !dunno && !s.hulp) {
     const h = form.querySelector('[data-f="hulp"]');
     h.classList.add('need');
     toast('Wybierz hebben albo zijn');
@@ -412,7 +415,8 @@ function check(dunno = false) {
   }
 
   const results = s.mode === 'forms'
-    ? [['ev', val('ev'), w.imp_ev], ['mv', val('mv'), w.imp_mv], ['hulp', s.hulp || '', w.hulp], ['vd', val('vd'), w.vd]]
+    ? [['ev', val('ev'), w.imp_ev], ['mv', val('mv'), w.imp_mv],
+       ...(w.vd ? [['hulp', s.hulp || '', w.hulp], ['vd', val('vd'), w.vd]] : [])]
     : [['nl', val('nl'), w.nl]];
   let ok = true;
   for (const [f, v, answer] of results) {
@@ -482,7 +486,7 @@ function renderRows(q) {
     const s = progress.cards[cardKey(w, 'forms')];
     return `<li>
       <div class="w">${esc(w.nl)}<span>${esc(w.pl)}</span></div>
-      <div class="f">${esc(w.imp_ev)} / ${esc(w.imp_mv)} · (${esc(w.hulp)}) ${esc(w.vd)}</div>
+      <div class="f">${esc(w.imp_ev)} / ${esc(w.imp_mv)} · ${esc(perfLine(w))}</div>
       <div class="lvl" title="Poziom w trybie Formy">${levelDots(s ? s.box : null)}</div>
     </li>`;
   }).join('') : '<li class="empty">Nic nie znaleziono.</li>';
@@ -553,7 +557,7 @@ const actions = {
     const wrap = b.closest('.fld');
     wrap.classList.remove('need');
     wrap.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-    const vd = $('#ans').elements.vd;
+    const vd = $('#ans').elements.namedItem('vd');
     if (vd && !vd.value) vd.focus();
   },
   async connect() { location.href = await authorizeUrl(true); },

@@ -1,5 +1,5 @@
 // Offline: pliki aplikacji z pamięci podręcznej, w tle pobierana nowsza wersja.
-const CACHE = 'vw-v1';
+const CACHE = 'vw-v2';
 const ASSETS = [
   './', './index.html', './style.css', './app.js', './data/slowka.json', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png',
